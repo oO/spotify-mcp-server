@@ -3,13 +3,14 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { albumTools } from './albums.js';
 import { playTools } from './play.js';
 import { readTools } from './read.js';
+import { bpmTools } from './getsongbpm.js';
 
 const server = new McpServer({
   name: 'spotify-controller',
   version: '1.0.0',
 });
 
-[...readTools, ...playTools, ...albumTools].forEach((tool) => {
+[...readTools, ...playTools, ...albumTools, ...bpmTools].forEach((tool) => {
   server.tool(tool.name, tool.description, tool.schema, tool.handler);
 });
 

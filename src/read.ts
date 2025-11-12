@@ -528,6 +528,72 @@ const getQueue: tool<{
   },
 };
 
+const getTrackAudioFeatures: tool<{
+  trackId: z.ZodString;
+}> = {
+  name: 'getTrackAudioFeatures',
+  description: 'Get audio features (BPM, key, energy, danceability, etc.) for a Spotify track',
+  schema: {
+    trackId: z.string().describe('The Spotify ID of the track'),
+  },
+  handler: async (args, _extra: SpotifyHandlerExtra) => {
+    const { trackId } = args;
+
+    try {
+      const features = await handleSpotifyRequest(async (spotifyApi) => {
+        return await spotifyApi.tracks.audioFeatures(trackId);
+      });
+
+      if (!features) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `No audio features found for track ID: ${trackId}`,
+            },
+          ],
+        };
+      }
+
+      const keyNames = ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭', 'G', 'G♯/A♭', 'A', 'A♯/B♭', 'B'];
+      const keyName = features.key !== -1 ? keyNames[features.key] : 'Unknown';
+      const mode = features.mode === 1 ? 'Major' : 'Minor';
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `# Audio Features\n\n` +
+              `**BPM (Tempo)**: ${Math.round(features.tempo)}\n` +
+              `**Key**: ${keyName} ${mode}\n` +
+              `**Energy**: ${(features.energy * 100).toFixed(0)}%\n` +
+              `**Danceability**: ${(features.danceability * 100).toFixed(0)}%\n` +
+              `**Valence (Happiness)**: ${(features.valence * 100).toFixed(0)}%\n` +
+              `**Acousticness**: ${(features.acousticness * 100).toFixed(0)}%\n` +
+              `**Instrumentalness**: ${(features.instrumentalness * 100).toFixed(0)}%\n` +
+              `**Liveness**: ${(features.liveness * 100).toFixed(0)}%\n` +
+              `**Speechiness**: ${(features.speechiness * 100).toFixed(0)}%\n` +
+              `**Loudness**: ${features.loudness.toFixed(1)} dB\n` +
+              `**Time Signature**: ${features.time_signature}/4`,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error getting audio features: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          },
+        ],
+      };
+    }
+  },
+};
+
 export const readTools = [
   searchSpotify,
   getNowPlaying,
@@ -536,4 +602,5 @@ export const readTools = [
   getRecentlyPlayed,
   getUsersSavedTracks,
   getQueue,
+  getTrackAudioFeatures,
 ];
